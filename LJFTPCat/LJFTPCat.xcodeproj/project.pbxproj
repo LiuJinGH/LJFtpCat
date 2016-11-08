@@ -14,6 +14,7 @@
 		4425829B1DC999280024551D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4425829A1DC999280024551D /* Assets.xcassets */; };
 		4425829E1DC999280024551D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4425829C1DC999280024551D /* LaunchScreen.storyboard */; };
 		442582A81DC999890024551D /* LJFTPClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 442582A71DC999890024551D /* LJFTPClient.m */; };
+		444846941DCAE7A8007CA63B /* FTPCatFileModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 444846931DCAE7A8007CA63B /* FTPCatFileModel.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,8 @@
 		442582A61DC999890024551D /* LJFTPClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LJFTPClient.h; sourceTree = "<group>"; };
 		442582A71DC999890024551D /* LJFTPClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LJFTPClient.m; sourceTree = "<group>"; };
 		442582A91DC999CC0024551D /* LJFTPCat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LJFTPCat.h; sourceTree = "<group>"; };
+		444846921DCAE7A8007CA63B /* FTPCatFileModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FTPCatFileModel.h; sourceTree = "<group>"; };
+		444846931DCAE7A8007CA63B /* FTPCatFileModel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FTPCatFileModel.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,11 +90,29 @@
 		442582A51DC999650024551D /* LJFTPCat */ = {
 			isa = PBXGroup;
 			children = (
+				444846951DCB0CFA007CA63B /* LJFTPCatStore */,
+				4448468E1DCAE5B8007CA63B /* LJFTPCatModel */,
 				442582A61DC999890024551D /* LJFTPClient.h */,
 				442582A71DC999890024551D /* LJFTPClient.m */,
 				442582A91DC999CC0024551D /* LJFTPCat.h */,
 			);
 			path = LJFTPCat;
+			sourceTree = "<group>";
+		};
+		4448468E1DCAE5B8007CA63B /* LJFTPCatModel */ = {
+			isa = PBXGroup;
+			children = (
+				444846921DCAE7A8007CA63B /* FTPCatFileModel.h */,
+				444846931DCAE7A8007CA63B /* FTPCatFileModel.m */,
+			);
+			path = LJFTPCatModel;
+			sourceTree = "<group>";
+		};
+		444846951DCB0CFA007CA63B /* LJFTPCatStore */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = LJFTPCatStore;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -168,6 +189,7 @@
 			files = (
 				442582961DC999280024551D /* ViewController.m in Sources */,
 				442582931DC999280024551D /* AppDelegate.m in Sources */,
+				444846941DCAE7A8007CA63B /* FTPCatFileModel.m in Sources */,
 				442582901DC999280024551D /* main.m in Sources */,
 				442582A81DC999890024551D /* LJFTPClient.m in Sources */,
 			);
@@ -326,6 +348,7 @@
 				442582A41DC999280024551D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

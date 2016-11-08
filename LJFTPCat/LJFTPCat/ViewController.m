@@ -20,7 +20,6 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     [self.ftpCat connectFTPServer];
-    [self.ftpCat sendCommandAboutData:@"LIST"];
 }
 
 -(LJFTPClient *)ftpCat{

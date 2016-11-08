@@ -7,6 +7,7 @@
 //
 #import <Foundation/Foundation.h>
 #import "LJFTPClient.h"
+#import "LJFTPCatModel/FTPCatFileModel.h"
 
 #define kFTPServer @"www.liujinxixi.cn"
 #define kFTPPort 21
@@ -24,16 +25,20 @@
 @property (nonatomic) NSString *FTPUserName;
 @property (nonatomic) NSString *FTPUserPassword;
 
+//指令输入输出流
 @property (nonatomic) NSInputStream *inputStream;
 @property (nonatomic) NSOutputStream *outputStream;
-
+//数据输入输出流
 @property (nonatomic) NSInputStream *dataInputStream;
 @property (nonatomic) NSOutputStream *dataOutputStream;
 
+//上一次接收响应的响应码
 @property (nonatomic) NSString *lastResponseCode;
 @property (nonatomic,assign) int lastResponseCodeInt;
+//上一次接收响应的信息
 @property (nonatomic) NSString *lastResponseMessage;
 
+//上一次发送的命令
 @property (nonatomic) NSString *lastCommandSent;
 
 //标识FTPClient的状态
@@ -41,6 +46,15 @@
 @property (nonatomic,assign) BOOL loggedOn;
 @property (nonatomic,assign) BOOL isDataStreamConfigured;
 @property (nonatomic,assign) BOOL isDataStreamAvailable;
+
+//标识命令输入输出流的连接状态
+@property (nonatomic,assign) BOOL isInputStreamConnected;
+@property (nonatomic,assign) BOOL isOutputStreamConnected;
+
+//标识数据输入输出流的连接状态
+@property (nonatomic,assign) BOOL isInputDataStreamConnected;
+@property (nonatomic,assign) BOOL isOutputDataStreamConnected;
+
 @end
 
 @implementation LJFTPClient
@@ -50,7 +64,12 @@
 -(instancetype )initFTPClientWithUserName:(NSString *)userName andUserPassword:(NSString *)userPassword{
     
     if (self = [super init]) {
-        self.isConnected = NO;
+        _isConnected = NO;
+        
+        _isInputStreamConnected = NO;
+        _isOutputStreamConnected = NO;
+        _isInputDataStreamConnected = NO;
+        _isOutputDataStreamConnected = NO;
         
         self.FTPUserName = userName;
         self.FTPUserPassword = userPassword;
@@ -69,6 +88,20 @@
     if (self.isConnected) {
         [self closeFTPNetworkCommunication];
     }
+}
+
+-(void )setupStream:(NSStream *)aStream WithConnectionStatus:(BOOL)connectionStatus{
+    
+    if (aStream == self.inputStream) {
+        self.isInputStreamConnected = connectionStatus;
+    }else if (aStream == self.outputStream){
+        self.isOutputStreamConnected = connectionStatus;
+    }else if (aStream == self.dataInputStream){
+        self.isInputDataStreamConnected = connectionStatus;
+    }else if (aStream == self.dataOutputStream){
+        self.isOutputDataStreamConnected = connectionStatus;
+    }
+    
 }
 
 #pragma mark - thread management
@@ -176,11 +209,12 @@
     switch (eventCode) {
         case NSStreamEventOpenCompleted:
 //            NSLog(@"连接成功 %@", aStream);
+            [self setupStream:aStream WithConnectionStatus:YES];
             
             break;
             
         case NSStreamEventHasBytesAvailable:
-            NSLog(@"接收数据 %@", aStream);
+//            NSLog(@"接收数据 %@", aStream);
             //输入流，接收命令信息
             if (aStream == self.inputStream) {
                 uint8_t buffer[1024];
@@ -202,10 +236,20 @@
                     len = [self.dataInputStream read:buffer maxLength:sizeof(buffer)];
                     numberOfBytesReceived += len;
                     if (len > 0) {
-                        NSString *output = [[NSString alloc] initWithBytes:buffer length:len encoding:NSASCIIStringEncoding];
-                        if (output) {
-                            [self parseResponseMessage:output];
+                        NSString *output = [[NSString alloc] initWithBytes:buffer length:len encoding:NSUTF8StringEncoding];
+                        
+                        if ([self.lastCommandSent isEqualToString:@"LIST"]) {
+                            NSLog(@"-----%@-----", self.lastCommandSent);
+                            NSArray <NSString *> *listString = [output componentsSeparatedByString:@"\n"];
+                            NSMutableArray <NSString *> *listDataString = [NSMutableArray arrayWithArray:listString];
+                            [listDataString removeLastObject];
+                            [listDataString enumerateObjectsUsingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+//                               NSLog(@"%ld  %@", idx ,obj);
+                                [FTPCatFileModel createFileFromString:obj];
+                            }];
+                            
                         }
+                        
                     }
                 }
             }
@@ -213,15 +257,17 @@
             break;
         
         case NSStreamEventHasSpaceAvailable:
-            NSLog(@"发送数据 %@", aStream);
+//            NSLog(@"发送数据 %@", aStream);
             break;
             
         case NSStreamEventErrorOccurred:
-            NSLog(@"连接失败 %@", aStream);
+            NSLog(@"连接关闭 %@", aStream);
+            [self setupStream:aStream WithConnectionStatus:NO];
+            
             break;
             
         case NSStreamEventEndEncountered:
-            NSLog(@"连接关闭 %@", aStream);
+            NSLog(@"连接失败 %@", aStream);
             break;
         
         case NSStreamEventNone:
@@ -233,6 +279,12 @@
 }
 
 #pragma mark - FTPDataCmdCommunication
+
+-(NSArray *)parseLISTCmdData:(NSString *)ListData{
+    
+    
+    return [NSArray new];
+}
 
 -(void )parseResponseMessage:(NSString *)stringData{
     NSLog(@"%@", stringData);
@@ -263,7 +315,7 @@
             //进入被动模式（IP 地址、ID 端口
             
             [self acceptDataStreamConfiguration:stringData];
-            
+            [self sendCmdList];
             break;
             
         case 230:
@@ -283,6 +335,7 @@
             break;
             
         default:
+            
             break;
     }
     
@@ -309,11 +362,11 @@
 }
 
 -(void )sendCommand:(NSString *)cmd{
-    if (YES) {
+    if (self.isConnected) {
         
         if (self.outputStream) {
+            self.lastCommandSent = cmd;
             NSString *cmdToSend = [NSString stringWithFormat:@"%@\n", cmd];
-            self.lastCommandSent = cmdToSend;
             NSData *data = [[NSData alloc] initWithData:[cmdToSend dataUsingEncoding:NSASCIIStringEncoding]];
             numberOfBytesSent += [data length];
             [self.outputStream write:[data bytes] maxLength:[data length]];
@@ -338,15 +391,9 @@
 
 -(void )sendCmdList{
     NSLog(@"发送命令：LIST");
-    [self sendCommandAboutData:@"LIST"];
+    [self sendCommand:@"LIST"];
 }
 
--(void )sendCommandAboutData:(NSString *)cmd{
-    if (self.isDataStreamAvailable) {
-        [self sendCommand:cmd];
-    }else{
-        NSLog(@"FTP数据通道未打开");
-    }
-}
+
 
 @end
